@@ -5,6 +5,7 @@ import { SelectInput } from './SelectInput';
 export function OptionControls() {
   const { state, dispatch } = useSimulationContext();
   const params = state.optionParams;
+  const chainLocked = state.selectedChainOption !== null;
 
   function setParam(key: string, value: number | string) {
     dispatch({
@@ -13,7 +14,7 @@ export function OptionControls() {
     });
   }
 
-  const ivLockBtn = (
+  const ivLockBtn = chainLocked ? undefined : (
     <button
       className={`iv-lock-btn ${state.ivLocked ? 'locked' : 'unlocked'}`}
       onClick={() =>
@@ -29,9 +30,15 @@ export function OptionControls() {
     </button>
   );
 
+  // DTE display: compute from expiry in years
+  const dte = Math.round(params.expiry * 365);
+
   return (
     <div className="control-group">
-      <h3>Option</h3>
+      <h3>
+        Option
+        {chainLocked && <span className="chain-badge">CHAIN</span>}
+      </h3>
       <div className="control-grid option-grid">
         <NumberInput
           label="Strike"
@@ -39,6 +46,7 @@ export function OptionControls() {
           onChange={(v) => setParam('strike', v)}
           step={1}
           min={1}
+          disabled={chainLocked}
         />
         <NumberInput
           label="Expiry"
@@ -46,7 +54,8 @@ export function OptionControls() {
           onChange={(v) => setParam('expiry', v)}
           step={0.25}
           min={0.05}
-          suffix="yrs"
+          suffix={`yrs | ${dte} DTE`}
+          disabled={chainLocked}
         />
         <NumberInput
           label="Rate"
@@ -62,7 +71,7 @@ export function OptionControls() {
           step={1}
           min={1}
           suffix="%"
-          disabled={state.ivLocked}
+          disabled={chainLocked || state.ivLocked}
           adornment={ivLockBtn}
         />
         <SelectInput
@@ -73,6 +82,7 @@ export function OptionControls() {
             { value: 'call', label: 'Call' },
             { value: 'put', label: 'Put' },
           ]}
+          disabled={chainLocked}
         />
         <SelectInput
           label="Style"
@@ -82,6 +92,7 @@ export function OptionControls() {
             { value: 'european', label: 'European' },
             { value: 'american', label: 'American' },
           ]}
+          disabled={chainLocked}
         />
       </div>
     </div>

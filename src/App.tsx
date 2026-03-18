@@ -5,6 +5,7 @@ import {
 } from './context/SimulationContext';
 import { SimulationControls } from './components/controls/SimulationControls';
 import { OptionControls } from './components/controls/OptionControls';
+import { OptionChainPanel } from './components/controls/OptionChainPanel';
 import { MetricsBar } from './components/controls/MetricsBar';
 import { TimelineScrubber } from './components/controls/TimelineScrubber';
 import { PricePathPanel } from './components/panels/PricePathPanel';
@@ -35,6 +36,8 @@ function AppLayout() {
         <SimulationControls />
         <OptionControls />
       </div>
+
+      <OptionChainPanel />
 
       {state.result ? (
         <>

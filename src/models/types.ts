@@ -80,3 +80,34 @@ export interface SimulationResult {
   optionParams: OptionParams;
   simulationParams: SimulationParams;
 }
+
+// --- Option chain (live market data) ---
+
+/** A single option contract in the chain */
+export interface OptionChainEntry {
+  strike: number;
+  lastPrice: number;
+  bidPrice: number;
+  askPrice: number;
+  volume: number;
+  openInterest: number;
+  iv: number;       // decimal (0.28 = 28%)
+  delta: number;
+}
+
+/** A strike row pairing the call and put at that strike */
+export interface OptionChainStrike {
+  strike: number;
+  call: OptionChainEntry | null;
+  put: OptionChainEntry | null;
+}
+
+/** Full option chain for a single expiration */
+export interface OptionChain {
+  ticker: string;
+  spotPrice: number;
+  expiration: string;         // ISO date "YYYY-MM-DD"
+  daysToExpiration: number;
+  expirations: string[];      // all available expiration dates
+  strikes: OptionChainStrike[];
+}

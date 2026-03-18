@@ -10,13 +10,20 @@ import {
 import type {
   ModelParams,
   OptionParams,
+  OptionType,
   SimulationParams,
   SimulationResult,
+  OptionChain,
 } from '../models/types';
 import {
   runSimulationAsync,
   repriceActivePathAsync,
 } from '../simulation/workerClient';
+import {
+  fetchExpirations,
+  fetchOptionChain,
+  closestExpiration,
+} from '../services/optionChain';
 
 // ---------------------------------------------------------------------------
 // State
@@ -32,6 +39,12 @@ export interface SimulationState {
   playbackSpeed: number; // steps per second
   isComputing: boolean;
   ivLocked: boolean; // when true, optionParams.iv tracks modelParams.sigma
+
+  // --- Option chain (market data) ---
+  optionChain: OptionChain | null;
+  chainLoading: boolean;
+  chainError: string | null;
+  selectedChainOption: { strike: number; type: OptionType } | null;
 }
 
 const DEFAULT_STATE: SimulationState = {
@@ -60,6 +73,11 @@ const DEFAULT_STATE: SimulationState = {
   playbackSpeed: 30,
   isComputing: false,
   ivLocked: true,
+
+  optionChain: null,
+  chainLoading: false,
+  chainError: null,
+  selectedChainOption: null,
 };
 
 // ---------------------------------------------------------------------------
@@ -75,7 +93,22 @@ type Action =
   | { type: 'SET_PLAYING'; payload: boolean }
   | { type: 'SET_SPEED'; payload: number }
   | { type: 'SET_COMPUTING'; payload: boolean }
-  | { type: 'SET_IV_LOCKED'; payload: boolean };
+  | { type: 'SET_IV_LOCKED'; payload: boolean }
+  // Chain actions
+  | { type: 'SET_OPTION_CHAIN'; payload: OptionChain }
+  | { type: 'SET_CHAIN_LOADING'; payload: boolean }
+  | { type: 'SET_CHAIN_ERROR'; payload: string | null }
+  | {
+      type: 'SELECT_CHAIN_OPTION';
+      payload: {
+        strike: number;
+        optionType: OptionType;
+        iv: number;
+        spotPrice: number;
+        dte: number;
+      };
+    }
+  | { type: 'CLEAR_CHAIN_OPTION' };
 
 function reducer(state: SimulationState, action: Action): SimulationState {
   switch (action.type) {
@@ -112,6 +145,48 @@ function reducer(state: SimulationState, action: Action): SimulationState {
       }
       return { ...state, ivLocked: false };
     }
+
+    // --- Chain actions ---
+
+    case 'SET_OPTION_CHAIN':
+      return {
+        ...state,
+        optionChain: action.payload,
+        chainLoading: false,
+        chainError: null,
+      };
+
+    case 'SET_CHAIN_LOADING':
+      return { ...state, chainLoading: action.payload };
+
+    case 'SET_CHAIN_ERROR':
+      return {
+        ...state,
+        chainError: action.payload,
+        chainLoading: false,
+      };
+
+    case 'SELECT_CHAIN_OPTION': {
+      const { strike, optionType, iv, spotPrice, dte } = action.payload;
+      return {
+        ...state,
+        selectedChainOption: { strike, type: optionType },
+        ivLocked: false,
+        modelParams: { ...state.modelParams, s0: spotPrice },
+        optionParams: {
+          ...state.optionParams,
+          strike,
+          expiry: dte / 365,
+          iv,
+          optionType,
+          optionStyle: 'american', // US equity options
+        },
+      };
+    }
+
+    case 'CLEAR_CHAIN_OPTION':
+      return { ...state, selectedChainOption: null };
+
     default:
       return state;
   }
@@ -126,6 +201,9 @@ interface SimulationContextValue {
   dispatch: React.Dispatch<Action>;
   run: () => void;
   selectPath: (pathIndex: number) => void;
+  loadChain: (ticker: string, expiration?: string) => void;
+  selectChainOption: (strike: number, optionType: OptionType) => void;
+  clearChainOption: () => void;
 }
 
 const SimulationContext = createContext<SimulationContextValue | null>(null);
@@ -182,6 +260,114 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'SET_COMPUTING', payload: false });
       },
     );
+  }, []);
+
+  // --- Load option chain from barchart ---
+  const loadChain = useCallback(
+    async (ticker: string, expiration?: string) => {
+      dispatch({ type: 'SET_CHAIN_LOADING', payload: true });
+      dispatch({ type: 'SET_CHAIN_ERROR', payload: null });
+
+      try {
+        const s = stateRef.current;
+        let expirations: string[];
+        let spotPrice: number;
+
+        // Reuse cached expirations if same ticker
+        if (
+          s.optionChain?.ticker === ticker.toUpperCase() &&
+          s.optionChain.expirations.length > 0
+        ) {
+          expirations = s.optionChain.expirations;
+          spotPrice = s.optionChain.spotPrice;
+        } else {
+          const meta = await fetchExpirations(ticker);
+          expirations = meta.expirations;
+          spotPrice = meta.spotPrice;
+        }
+
+        if (expirations.length === 0) {
+          throw new Error(`No options available for ${ticker.toUpperCase()}`);
+        }
+
+        // Determine which expiration to fetch
+        const targetExp =
+          expiration ?? closestExpiration(expirations, s.optionParams.expiry);
+
+        const chain = await fetchOptionChain(ticker, targetExp, expirations);
+
+        // Override spot price if the expirations call returned it but the
+        // chain call returned 0 (or vice versa)
+        if (!chain.spotPrice && spotPrice) {
+          chain.spotPrice = spotPrice;
+        }
+
+        dispatch({ type: 'SET_OPTION_CHAIN', payload: chain });
+
+        // Re-select previous strike in new chain if applicable
+        const prev = stateRef.current.selectedChainOption;
+        if (prev) {
+          const row = chain.strikes.find((r) => r.strike === prev.strike);
+          const entry = row
+            ? prev.type === 'call'
+              ? row.call
+              : row.put
+            : null;
+          if (entry) {
+            dispatch({
+              type: 'SELECT_CHAIN_OPTION',
+              payload: {
+                strike: prev.strike,
+                optionType: prev.type,
+                iv: entry.iv,
+                spotPrice: chain.spotPrice,
+                dte: chain.daysToExpiration,
+              },
+            });
+          } else {
+            dispatch({ type: 'CLEAR_CHAIN_OPTION' });
+          }
+        }
+      } catch (err) {
+        dispatch({
+          type: 'SET_CHAIN_ERROR',
+          payload: err instanceof Error ? err.message : String(err),
+        });
+      }
+    },
+    [],
+  );
+
+  // --- Select an option from the chain ---
+  const selectChainOption = useCallback(
+    (strike: number, optionType: OptionType) => {
+      const s = stateRef.current;
+      if (!s.optionChain) return;
+
+      const row = s.optionChain.strikes.find((r) => r.strike === strike);
+      if (!row) return;
+
+      const entry = optionType === 'call' ? row.call : row.put;
+      if (!entry) return;
+
+      dispatch({
+        type: 'SELECT_CHAIN_OPTION',
+        payload: {
+          strike,
+          optionType,
+          iv: entry.iv,
+          spotPrice: s.optionChain.spotPrice,
+          dte: s.optionChain.daysToExpiration,
+        },
+      });
+      // The auto-reprice effect will trigger a simulation since optionParams changed
+    },
+    [],
+  );
+
+  // --- Clear chain selection ---
+  const clearChainOption = useCallback(() => {
+    dispatch({ type: 'CLEAR_CHAIN_OPTION' });
   }, []);
 
   // --- Auto-reprice when optionParams change (if simulation already ran) ---
@@ -241,7 +427,17 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
   }, [state.optionParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <SimulationContext.Provider value={{ state, dispatch, run, selectPath }}>
+    <SimulationContext.Provider
+      value={{
+        state,
+        dispatch,
+        run,
+        selectPath,
+        loadChain,
+        selectChainOption,
+        clearChainOption,
+      }}
+    >
       {children}
     </SimulationContext.Provider>
   );
