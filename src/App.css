@@ -3,19 +3,36 @@
 /* ================================================================== */
 
 /* ------------------------------------------------------------------ */
-/*  App layout                                                         */
+/*  App layout — sidebar + main area                                   */
 /* ------------------------------------------------------------------ */
 
 .app {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   height: 100vh;
   overflow: hidden;
   background: var(--bg-base);
 }
 
+.sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-base);
+  border-right: 1px solid var(--border-subtle);
+  overflow: hidden;
+}
+
+.main-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
 /* ------------------------------------------------------------------ */
-/*  Computing indicator (shown in SimulationControls)                   */
+/*  Computing indicator                                                */
 /* ------------------------------------------------------------------ */
 
 .computing-indicator {
@@ -32,24 +49,14 @@
 }
 
 /* ------------------------------------------------------------------ */
-/*  Controls bar                                                       */
+/*  Control groups (sidebar)                                           */
 /* ------------------------------------------------------------------ */
 
-.controls-bar {
-  display: flex;
-  gap: 3px;
-  padding: 3px;
-  background: var(--bg-base);
-  overflow-x: auto;
-  flex-shrink: 0;
-}
-
 .control-group {
-  flex: 1;
-  min-width: 200px;
   padding: 6px 8px 8px;
   background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
 }
 
 .control-group h3 {
@@ -62,8 +69,28 @@
   margin-bottom: 6px;
 }
 
+/* Header row with right-aligned actions */
+.control-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.control-group-header h3 {
+  margin-bottom: 6px;
+}
+
+/* Option group fills remaining sidebar space */
+.control-group-option {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 /* ------------------------------------------------------------------ */
-/*  Control grid layout                                                */
+/*  Control grid layout — 2-column for sidebar                         */
 /* ------------------------------------------------------------------ */
 
 .control-grid {
@@ -72,17 +99,32 @@
 }
 
 .sim-grid {
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(2, 1fr);
 }
 
 .option-grid {
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(2, 1fr);
 }
 
-.control-actions {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+/* ------------------------------------------------------------------ */
+/*  Section labels (row dividers within a control group)               */
+/* ------------------------------------------------------------------ */
+
+.section-label {
+  grid-column: 1 / -1;
+  font-family: var(--font-data);
+  font-size: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  padding: 0 0 1px;
+}
+
+.section-label-divider {
+  border-top: 1px solid var(--border-subtle);
+  margin-top: 2px;
+  padding-top: 4px;
 }
 
 /* ------------------------------------------------------------------ */
@@ -190,6 +232,14 @@
   box-shadow: 0 0 0 1px rgba(76, 139, 245, 0.15);
 }
 
+.sel-input.disabled {
+  opacity: 0.5;
+}
+
+.sel-input.disabled select {
+  cursor: not-allowed;
+}
+
 .sel-input-label {
   flex-shrink: 0;
   padding: 0 6px;
@@ -281,6 +331,66 @@
 }
 
 /* ------------------------------------------------------------------ */
+/*  Action bar (sidebar)                                               */
+/* ------------------------------------------------------------------ */
+
+.action-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.action-bar .computing-indicator {
+  margin-left: auto;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Chain-locked Option group                                          */
+/* ------------------------------------------------------------------ */
+
+.control-group.chain-locked {
+  border-left: 3px solid var(--data-amber);
+}
+
+/* Chain source text in heading (e.g. "· AAPL Call 255") */
+.chain-source {
+  margin-left: 6px;
+  font-weight: 700;
+  color: var(--data-amber);
+  letter-spacing: 0.5px;
+}
+
+/* Disconnect [×] button */
+.chain-disconnect {
+  width: 18px;
+  height: 18px;
+  margin-bottom: 4px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.12s;
+}
+
+.chain-disconnect:hover {
+  border-color: var(--data-red);
+  color: var(--data-red);
+  background: rgba(229, 83, 75, 0.08);
+}
+
+/* ------------------------------------------------------------------ */
 /*  IV lock toggle                                                     */
 /* ------------------------------------------------------------------ */
 
@@ -312,6 +422,329 @@
 .iv-lock-btn:hover {
   color: var(--accent-primary);
   background: rgba(76, 139, 245, 0.08);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Option mode toggle (Manual / Market)                               */
+/* ------------------------------------------------------------------ */
+
+.option-header-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  flex-shrink: 0;
+}
+
+.option-mode-toggle {
+  display: flex;
+  height: 18px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.option-mode-btn {
+  padding: 0 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-data);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.1s;
+}
+
+.option-mode-btn + .option-mode-btn {
+  border-left: 1px solid var(--border-subtle);
+}
+
+.option-mode-btn.active {
+  background: var(--bg-overlay);
+  color: var(--text-bright);
+}
+
+/* Amber tint when Market mode is active */
+.chain-locked .option-mode-btn.active {
+  color: var(--data-amber);
+  background: rgba(204, 139, 23, 0.1);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Option ticker input row (market mode)                              */
+/* ------------------------------------------------------------------ */
+
+.option-ticker-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+  flex-shrink: 0;
+}
+
+.option-ticker-spot {
+  font-family: var(--font-data);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-left: 4px;
+}
+
+.chain-ticker-input {
+  width: 64px;
+  height: 22px;
+  padding: 0 6px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 2px;
+  background: var(--bg-overlay);
+  color: var(--text-bright);
+  font-family: var(--font-data);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  outline: none;
+  text-transform: uppercase;
+  transition: border-color 0.15s;
+}
+
+.chain-ticker-input:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 1px rgba(76, 139, 245, 0.15);
+}
+
+.chain-ticker-input::placeholder {
+  color: var(--text-muted);
+  font-weight: 400;
+  text-transform: none;
+}
+
+.chain-load-btn {
+  height: 22px;
+  padding: 0 8px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 2px;
+  background: var(--bg-overlay);
+  color: var(--text-secondary);
+  font-family: var(--font-data);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.12s;
+}
+
+.chain-load-btn:hover:not(:disabled) {
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+.chain-load-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.chain-error-inline {
+  color: var(--data-red);
+  font-size: 9px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.chain-loading-indicator {
+  color: var(--data-amber);
+  font-size: 10px;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Compact chain table (inside sidebar Option group)                  */
+/* ------------------------------------------------------------------ */
+
+.compact-chain {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-top: 1px solid var(--border-subtle);
+  margin-top: 4px;
+}
+
+/* Toolbar: expiration + spot */
+.compact-chain-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 0;
+  font-family: var(--font-data);
+  font-size: 10px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.compact-chain-toolbar .chain-exp-select {
+  flex: 1;
+  min-width: 0;
+  height: 20px;
+  padding: 0 16px 0 4px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 2px;
+  background: var(--bg-overlay);
+  color: var(--text-bright);
+  font-family: var(--font-data);
+  font-size: 10px;
+  font-weight: 500;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%238b95a5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 4px center;
+}
+
+.compact-chain-spot {
+  font-weight: 600;
+  color: var(--text-bright);
+  white-space: nowrap;
+  margin-left: auto;
+}
+
+/* Column header */
+.compact-chain-header {
+  display: grid;
+  grid-template-columns: 1fr 0.8fr 1.1fr 0.8fr 1fr;
+  gap: 2px;
+  padding: 2px 0;
+  font-family: var(--font-data);
+  font-size: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.compact-chain-header span {
+  text-align: center;
+}
+
+.compact-chain-header .col-call {
+  color: var(--data-green);
+}
+
+.compact-chain-header .col-put {
+  color: var(--data-red);
+}
+
+/* Scrollable body */
+.compact-chain-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+}
+
+/* Row */
+.compact-chain-row {
+  display: grid;
+  grid-template-columns: 1fr 0.8fr 1.1fr 0.8fr 1fr;
+  gap: 2px;
+  min-height: 21px;
+  font-family: var(--font-data);
+  font-size: 10px;
+  border-bottom: 1px solid rgba(40, 48, 64, 0.3);
+  align-items: center;
+}
+
+.compact-chain-row.atm {
+  border-top: 1px solid var(--data-amber);
+  border-bottom: 1px solid var(--data-amber);
+}
+
+/* Clickable call/put cells */
+.compact-chain-call,
+.compact-chain-put {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0;
+  padding: 1px 4px;
+  cursor: pointer;
+  border-radius: 1px;
+  transition: background 0.08s;
+  min-width: 0;
+}
+
+.compact-chain-call {
+  flex-direction: row;
+}
+
+.compact-chain-put {
+  flex-direction: row-reverse;
+}
+
+.compact-chain-call:hover,
+.compact-chain-put:hover {
+  background: rgba(76, 139, 245, 0.1);
+}
+
+.compact-chain-call.selected,
+.compact-chain-put.selected {
+  background: rgba(76, 139, 245, 0.18);
+  box-shadow: inset 0 0 0 1px var(--accent-primary);
+}
+
+.compact-chain-call.itm {
+  background: rgba(64, 182, 107, 0.04);
+}
+
+.compact-chain-put.itm {
+  background: rgba(229, 83, 75, 0.04);
+}
+
+.compact-chain-call.empty,
+.compact-chain-put.empty {
+  cursor: default;
+  color: var(--text-muted);
+  justify-content: center;
+}
+
+/* Data inside call/put cells */
+.cc-price {
+  font-weight: 600;
+  color: var(--text-bright);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.cc-iv {
+  font-size: 8px;
+  font-weight: 500;
+  color: var(--data-violet);
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Strike center column */
+.compact-chain-strike {
+  text-align: center;
+  font-weight: 700;
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
+.compact-chain-row.atm .compact-chain-strike {
+  color: var(--data-amber);
 }
 
 /* ------------------------------------------------------------------ */
@@ -647,475 +1080,4 @@
   font-family: var(--font-data);
   font-size: 13px;
   letter-spacing: 0.3px;
-}
-
-/* ------------------------------------------------------------------ */
-/*  SelectInput disabled state                                         */
-/* ------------------------------------------------------------------ */
-
-.sel-input.disabled {
-  opacity: 0.5;
-}
-
-.sel-input.disabled select {
-  cursor: not-allowed;
-}
-
-/* ------------------------------------------------------------------ */
-/*  Chain badge on OptionControls heading                               */
-/* ------------------------------------------------------------------ */
-
-.chain-badge {
-  display: inline-block;
-  margin-left: 6px;
-  padding: 1px 5px;
-  font-size: 8px;
-  font-weight: 700;
-  letter-spacing: 0.8px;
-  color: var(--data-amber);
-  border: 1px solid var(--data-amber);
-  border-radius: 2px;
-  vertical-align: middle;
-  opacity: 0.85;
-}
-
-/* ------------------------------------------------------------------ */
-/*  Option chain panel                                                 */
-/* ------------------------------------------------------------------ */
-
-.chain-panel {
-  flex-shrink: 0;
-  background: var(--bg-base);
-}
-
-/* ------------------------------------------------------------------ */
-/*  Chain summary bar (collapsed view / always visible when loaded)     */
-/* ------------------------------------------------------------------ */
-
-.chain-summary {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 0 10px;
-  height: 28px;
-  background: var(--bg-elevated);
-  border-bottom: 1px solid var(--border-subtle);
-  font-family: var(--font-data);
-  font-size: 11px;
-  overflow: hidden;
-}
-
-.chain-summary-empty {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  width: 100%;
-}
-
-.chain-summary-ticker {
-  font-weight: 700;
-  color: var(--data-amber);
-  letter-spacing: 0.5px;
-}
-
-.chain-summary-spot {
-  color: var(--text-bright);
-  font-weight: 600;
-}
-
-.chain-summary-sep {
-  color: var(--border-default);
-  font-size: 13px;
-}
-
-.chain-summary-exp {
-  color: var(--text-secondary);
-}
-
-.chain-summary-selection {
-  color: var(--data-cyan);
-  font-weight: 600;
-}
-
-.chain-summary-actions {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-}
-
-.chain-clear-btn {
-  padding: 1px 6px;
-  border: 1px solid var(--border-subtle);
-  border-radius: 2px;
-  background: transparent;
-  color: var(--text-muted);
-  font-family: var(--font-data);
-  font-size: 9px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  cursor: pointer;
-  transition: all 0.12s;
-}
-
-.chain-clear-btn:hover {
-  border-color: var(--data-red);
-  color: var(--data-red);
-}
-
-.chain-toggle-btn {
-  width: 22px;
-  height: 20px;
-  border: 1px solid var(--border-subtle);
-  border-radius: 2px;
-  background: transparent;
-  color: var(--text-muted);
-  font-size: 9px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.12s;
-}
-
-.chain-toggle-btn:hover {
-  border-color: var(--border-default);
-  color: var(--text-primary);
-}
-
-.chain-loading-indicator {
-  color: var(--data-amber);
-  font-size: 10px;
-  animation: pulse 1s ease-in-out infinite;
-}
-
-/* ------------------------------------------------------------------ */
-/*  Chain ticker input + load button                                   */
-/* ------------------------------------------------------------------ */
-
-.chain-ticker-input {
-  width: 72px;
-  height: 22px;
-  padding: 0 6px;
-  border: 1px solid var(--border-subtle);
-  border-radius: 2px;
-  background: var(--bg-overlay);
-  color: var(--text-bright);
-  font-family: var(--font-data);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  outline: none;
-  text-transform: uppercase;
-  transition: border-color 0.15s;
-}
-
-.chain-ticker-input:focus {
-  border-color: var(--accent-primary);
-  box-shadow: 0 0 0 1px rgba(76, 139, 245, 0.15);
-}
-
-.chain-ticker-input::placeholder {
-  color: var(--text-muted);
-  font-weight: 400;
-  text-transform: none;
-}
-
-.chain-load-btn {
-  height: 22px;
-  padding: 0 10px;
-  border: 1px solid var(--border-subtle);
-  border-radius: 2px;
-  background: var(--bg-overlay);
-  color: var(--text-secondary);
-  font-family: var(--font-data);
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.12s;
-}
-
-.chain-load-btn:hover:not(:disabled) {
-  border-color: var(--accent-primary);
-  color: var(--accent-primary);
-}
-
-.chain-load-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.chain-error-inline {
-  color: var(--data-red);
-  font-size: 10px;
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 300px;
-}
-
-/* ------------------------------------------------------------------ */
-/*  Chain expanded view                                                */
-/* ------------------------------------------------------------------ */
-
-.chain-expanded {
-  display: flex;
-  flex-direction: column;
-  border-bottom: 1px solid var(--border-subtle);
-  background: var(--bg-surface);
-  max-height: 320px;
-}
-
-/* ------------------------------------------------------------------ */
-/*  Chain toolbar                                                      */
-/* ------------------------------------------------------------------ */
-
-.chain-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  background: var(--bg-elevated);
-  border-bottom: 1px solid var(--border-subtle);
-  font-family: var(--font-data);
-  font-size: 11px;
-  flex-shrink: 0;
-}
-
-.chain-toolbar-sep {
-  width: 1px;
-  height: 16px;
-  background: var(--border-subtle);
-  flex-shrink: 0;
-}
-
-.chain-exp-label {
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.chain-exp-select {
-  height: 22px;
-  padding: 0 20px 0 6px;
-  border: 1px solid var(--border-subtle);
-  border-radius: 2px;
-  background: var(--bg-overlay);
-  color: var(--text-bright);
-  font-family: var(--font-data);
-  font-size: 11px;
-  font-weight: 500;
-  outline: none;
-  cursor: pointer;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%238b95a5'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 5px center;
-}
-
-.chain-exp-select:focus {
-  border-color: var(--accent-primary);
-}
-
-.chain-spot-label {
-  color: var(--text-secondary);
-  font-size: 11px;
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.chain-spot-label strong {
-  color: var(--text-bright);
-}
-
-/* ------------------------------------------------------------------ */
-/*  Chain table header                                                 */
-/* ------------------------------------------------------------------ */
-
-.chain-table-header {
-  display: grid;
-  grid-template-columns: 1fr 72px 1fr;
-  font-family: var(--font-data);
-  background: var(--bg-elevated);
-  border-bottom: 1px solid var(--border-subtle);
-  flex-shrink: 0;
-}
-
-.chain-side-header {
-  display: flex;
-  flex-direction: column;
-  padding: 2px 8px;
-}
-
-.chain-side-header > span {
-  font-size: 9px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--text-muted);
-}
-
-.call-header > span {
-  color: var(--data-green);
-}
-
-.put-header > span {
-  color: var(--data-red);
-}
-
-.chain-col-labels {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr 0.7fr 0.7fr;
-  gap: 2px;
-  font-size: 8px;
-  font-weight: 600;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.chain-strike-header {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 9px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--text-muted);
-  border-left: 1px solid var(--border-subtle);
-  border-right: 1px solid var(--border-subtle);
-}
-
-/* ------------------------------------------------------------------ */
-/*  Chain table body (scrollable)                                      */
-/* ------------------------------------------------------------------ */
-
-.chain-table-body {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  min-height: 0;
-}
-
-/* ------------------------------------------------------------------ */
-/*  Chain row                                                          */
-/* ------------------------------------------------------------------ */
-
-.chain-row {
-  display: grid;
-  grid-template-columns: 1fr 72px 1fr;
-  border-bottom: 1px solid rgba(40, 48, 64, 0.4);
-  font-family: var(--font-data);
-  font-size: 11px;
-  min-height: 22px;
-}
-
-.chain-row.atm {
-  border-top: 1px solid var(--data-amber);
-  border-bottom: 1px solid var(--data-amber);
-}
-
-/* ------------------------------------------------------------------ */
-/*  Chain side (call or put half of a row)                             */
-/* ------------------------------------------------------------------ */
-
-.chain-side {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr 0.7fr 0.7fr;
-  gap: 2px;
-  padding: 2px 8px;
-  cursor: pointer;
-  transition: background 0.08s;
-}
-
-.chain-side:hover:not(.empty) {
-  background: rgba(76, 139, 245, 0.08);
-}
-
-.chain-side.call.itm {
-  background: rgba(64, 182, 107, 0.04);
-}
-
-.chain-side.put.itm {
-  background: rgba(229, 83, 75, 0.04);
-}
-
-.chain-side.selected {
-  background: rgba(76, 139, 245, 0.15) !important;
-  box-shadow: inset 2px 0 0 var(--accent-primary);
-}
-
-.chain-side.put.selected {
-  box-shadow: inset -2px 0 0 var(--accent-primary);
-}
-
-.chain-side.empty {
-  cursor: default;
-  justify-content: center;
-}
-
-/* ------------------------------------------------------------------ */
-/*  Chain cells                                                        */
-/* ------------------------------------------------------------------ */
-
-.chain-cell {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  font-weight: 500;
-  color: var(--text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  min-width: 0;
-}
-
-.chain-cell.last {
-  font-weight: 600;
-  color: var(--text-bright);
-}
-
-.chain-cell.iv {
-  color: var(--data-violet);
-}
-
-.chain-cell.vol,
-.chain-cell.oi {
-  color: var(--text-muted);
-  font-size: 10px;
-}
-
-.chain-cell.empty-cell {
-  grid-column: 1 / -1;
-  justify-content: center;
-  color: var(--text-muted);
-}
-
-/* ------------------------------------------------------------------ */
-/*  Chain strike column (center)                                       */
-/* ------------------------------------------------------------------ */
-
-.chain-strike {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 11px;
-  color: var(--text-secondary);
-  background: var(--bg-elevated);
-  border-left: 1px solid var(--border-subtle);
-  border-right: 1px solid var(--border-subtle);
-}
-
-.chain-row.atm .chain-strike {
-  color: var(--data-amber);
 }

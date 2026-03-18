@@ -4,7 +4,7 @@ import { NumberInput } from './NumberInput';
 import { SelectInput } from './SelectInput';
 
 export function SimulationControls() {
-  const { state, dispatch, run } = useSimulationContext();
+  const { state, dispatch } = useSimulationContext();
   const model = state.modelParams;
   const sim = state.simulationParams;
 
@@ -50,6 +50,7 @@ export function SimulationControls() {
     <div className="control-group">
       <h3>Simulation</h3>
       <div className="control-grid sim-grid">
+        <span className="section-label">Model</span>
         <SelectInput
           label="Model"
           value={model.type}
@@ -108,6 +109,7 @@ export function SimulationControls() {
             />
           </>
         )}
+        <span className="section-label section-label-divider">Monte Carlo</span>
         <NumberInput
           label="Paths"
           value={sim.numPaths}
@@ -130,20 +132,6 @@ export function SimulationControls() {
           onChange={(v) => setSimParam('seed', v)}
           step={1}
         />
-        <div className="control-actions">
-          <button className="run-button" onClick={run} disabled={state.isComputing}>
-            Run
-          </button>
-          <button
-            className="seed-button"
-            onClick={() => setSimParam('seed', Math.floor(Math.random() * 100000))}
-          >
-            Rand
-          </button>
-          {state.isComputing && (
-            <span className="computing-indicator">Computing...</span>
-          )}
-        </div>
       </div>
     </div>
   );

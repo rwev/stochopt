@@ -5,7 +5,7 @@ import {
 } from './context/SimulationContext';
 import { SimulationControls } from './components/controls/SimulationControls';
 import { OptionControls } from './components/controls/OptionControls';
-import { OptionChainPanel } from './components/controls/OptionChainPanel';
+import { ActionBar } from './components/controls/ActionBar';
 import { MetricsBar } from './components/controls/MetricsBar';
 import { TimelineScrubber } from './components/controls/TimelineScrubber';
 import { PricePathPanel } from './components/panels/PricePathPanel';
@@ -32,42 +32,43 @@ function AppLayout() {
     <div className="app">
       <AutoRun />
 
-      <div className="controls-bar">
+      <aside className="sidebar">
         <SimulationControls />
+        <ActionBar />
         <OptionControls />
-      </div>
+      </aside>
 
-      <OptionChainPanel />
-
-      {state.result ? (
-        <>
-          <div className="panels-grid">
-            <div className="panel-main">
-              <PricePathPanel />
+      <main className="main-area">
+        {state.result ? (
+          <>
+            <div className="panels-grid">
+              <div className="panel-main">
+                <PricePathPanel />
+              </div>
+              <div className="panel-side-top">
+                <DistributionPanel />
+              </div>
+              <div className="panel-bottom-left">
+                <OptionPricePanel />
+              </div>
+              <div className="panel-bottom-center">
+                <GreeksPanel />
+              </div>
+              <div className="panel-bottom-right">
+                <PayoffPanel />
+              </div>
             </div>
-            <div className="panel-side-top">
-              <DistributionPanel />
-            </div>
-            <div className="panel-bottom-left">
-              <OptionPricePanel />
-            </div>
-            <div className="panel-bottom-center">
-              <GreeksPanel />
-            </div>
-            <div className="panel-bottom-right">
-              <PayoffPanel />
-            </div>
+            <MetricsBar />
+            <TimelineScrubber />
+          </>
+        ) : (
+          <div className="empty-state">
+            {state.isComputing
+              ? 'Running simulation...'
+              : 'Configure parameters and run simulation'}
           </div>
-          <MetricsBar />
-          <TimelineScrubber />
-        </>
-      ) : (
-        <div className="empty-state">
-          {state.isComputing
-            ? 'Running simulation...'
-            : 'Configure parameters and run simulation'}
-        </div>
-      )}
+        )}
+      </main>
     </div>
   );
 }
